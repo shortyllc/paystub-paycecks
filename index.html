@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paystub & Check Generator</title>
+<style>
+  :root {
+    --neon-pink: #ff107a;
+    --dark-bg: #121212;
+    --panel-bg: #1e1e1e;
+    --text-light: #f5f5f5;
+  }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--dark-bg);
+    color: var(--text-light);
+    margin: 0;
+    padding: 20px;
+  }
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  h1 {
+    text-align: center;
+    color: var(--neon-pink);
+    text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  .card {
+    background: var(--panel-bg);
+    border: 1px solid var(--neon-pink);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 15px rgba(255, 16, 122, 0.15);
+  }
+  label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #ccc;
+  }
+  input[type="text"], input[type="number"], input[type="date"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    color: white;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  input:focus {
+    outline: none;
+    border-color: var(--neon-pink);
+    box-shadow: 0 0 8px var(--neon-pink);
+  }
+  .button-group {
+    display: flex;
+    gap: 15px;
+  }
+  button {
+    background: transparent;
+    color: var(--neon-pink);
+    border: 2px solid var(--neon-pink);
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    flex: 1;
+  }
+  button:hover {
+    background: var(--neon-pink);
+    color: white;
+    box-shadow: 0 0 15px var(--neon-pink);
+  }
+  .resource-links {
+    text-align: center;
+    padding: 20px;
+  }
+  .resource-links a {
+    color: var(--neon-pink);
+    text-decoration: none;
+    font-weight: bold;
+    display: inline-block;
+    margin: 0 15px;
+    border-bottom: 1px dashed var(--neon-pink);
+    transition: text-shadow 0.3s;
+  }
+  .resource-links a:hover {
+    text-shadow: 0 0 8px var(--neon-pink);
+  }
+  
+  /* Print Layout: Hides UI and formats for 8.5x11 Check-on-Top paper */
+  @media print {
+    body {
+      background: white;
+      color: black;
+      padding: 0;
+      margin: 0;
+    }
+    .no-print {
+      display: none;
+    }
+    .paystub-preview {
+      display: block !important;
+      border: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      width: 100%;
+    }
+    /* Creates a 3.5 inch margin at the top to bypass the physical check area */
+    .stub-section-wrapper {
+      margin-top: 3.6in; 
+      padding: 0.5in;
+    }
+    .stub-header, .stub-body {
+      color: black;
+    }
+  }
+
+  .paystub-preview {
+    display: none;
+    background: white;
+    color: black;
+    border: 2px dashed #444;
+    margin-top: 20px;
+  }
+  .stub-header {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 2px solid #000;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+  }
+  .stub-body {
+    display: flex;
+    justify-content: space-between;
+  }
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .data-table td {
+    padding: 8px;
+    border-bottom: 1px solid #ccc;
+  }
+</style>
+</head>
+<body>
+  <div class="container no-print">
+    <h1>Paystub Generator</h1>
+    
+    <div class="card">
+      <h3>Company Details</h3>
+      <label>Company Name</label>
+      <input type="text" id="compName">
+      <label>Company Address</label>
+      <input type="text" id="compAddress">
+    </div>
+
+    <div class="card">
+      <h3>Employee & Pay Details</h3>
+      <label>Employee Name</label>
+      <input type="text" id="empName">
+      <label>Pay Period (Start - End)</label>
+      <div style="display:flex; gap:10px;">
+        <input type="date" id="payStart">
+        <input type="date" id="payEnd">
+      </div>
+      <label>Gross Pay ($)</label>
+      <input type="number" id="grossPay" step="0.01">
+      <label>Total Deductions/Taxes ($)</label>
+      <input type="number" id="deductions" step="0.01">
+      
+      <div class="button-group">
+        <button onclick="generateStub()">Generate View</button>
+        <button onclick="window.print()">Print Document</button>
+      </div>
+    </div>
+
+    <div class="resource-links card">
+      <h3>Compatible Blank Check Paper</h3>
+      <p style="color:#aaa; font-size:14px;">Print using standard 8.5" x 11" "Check-on-Top" Form 1000 style paper.</p>
+      <a href="https://www.versacheck.com/web/products.aspx?form=1000" target="_blank">Buy VersaCheck Form 1000</a>
+      <a href="https://www.amazon.com/s?k=blank+business+check+paper+check+on+top" target="_blank">Search Amazon Stock</a>
+    </div>
+  </div>
+
+  <div id="stubOutput" class="paystub-preview">
+    <div class="stub-section-wrapper">
+      <div class="stub-header">
+        <div>
+          <h2 id="outCompName" style="margin:0;"></h2>
+          <p id="outCompAddress" style="margin:5px 0 0 0;"></p>
+        </div>
+        <div style="text-align: right;">
+          <h3 style="margin:0;">EARNINGS STATEMENT</h3>
+          <p>Period: <span id="outPeriod"></span></p>
+        </div>
+      </div>
+      <div class="stub-body">
+        <div style="width: 48%;">
+          <strong>Employee:</strong> <span id="outEmpName"></span>
+        </div>
+        <div style="width: 48%;">
+          <table class="data-table">
+            <tr>
+              <td>Gross Pay:</td>
+              <td style="text-align: right;">$<span id="outGross">0.00</span></td>
+            </tr>
+            <tr>
+              <td>Deductions:</td>
+              <td style="text-align: right;">-$<span id="outDed">0.00</span></td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Net Pay:</td>
+              <td style="font-weight: bold; text-align: right;">$<span id="outNet">0.00</span></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Local Storage
+    document.addEventListener("DOMContentLoaded", () => {
+      if (localStorage.getItem("companyName")) {
+        document.getElementById("compName").value = localStorage.getItem("companyName");
+      }
+      if (localStorage.getItem("companyAddress")) {
+        document.getElementById("compAddress").value = localStorage.getItem("companyAddress");
+      }
+    });
+
+    function generateStub() {
+      const cName = document.getElementById("compName").value;
+      const cAddr = document.getElementById("compAddress").value;
+      const eName = document.getElementById("empName").value;
+      const pStart = document.getElementById("payStart").value;
+      const pEnd = document.getElementById("payEnd").value;
+      const gross = parseFloat(document.getElementById("grossPay").value) || 0;
+      const ded = parseFloat(document.getElementById("deductions").value) || 0;
+      const net = gross - ded;
+
+      // Save business data to Local Storage
+      localStorage.setItem("companyName", cName);
+      localStorage.setItem("companyAddress", cAddr);
+
+      // Populate print view
+      document.getElementById("outCompName").innerText = cName || "Company Name";
+      document.getElementById("outCompAddress").innerText = cAddr || "Company Address";
+      document.getElementById("outEmpName").innerText = eName || "Employee Name";
+      document.getElementById("outPeriod").innerText = `${pStart} to ${pEnd}`;
+      document.getElementById("outGross").innerText = gross.toFixed(2);
+      document.getElementById("outDed").innerText = ded.toFixed(2);
+      document.getElementById("outNet").innerText = net.toFixed(2);
+
+      document.getElementById("stubOutput").style.display = "block";
+    }
+  </script>
+</body>
+</html>
