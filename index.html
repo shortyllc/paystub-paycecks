@@ -19,7 +19,7 @@
     padding: 20px;
   }
   .container {
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
   }
   h1 {
@@ -37,13 +37,24 @@
     margin-bottom: 20px;
     box-shadow: 0 0 15px rgba(255, 16, 122, 0.15);
   }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+  }
   label {
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
     color: #ccc;
+    font-size: 14px;
   }
-  input[type="text"], input[type="number"], input[type="date"] {
+  input[type="text"], input[type="number"], input[type="date"], select, input[type="file"] {
     width: 100%;
     padding: 10px;
     margin-bottom: 15px;
@@ -53,10 +64,20 @@
     border-radius: 4px;
     box-sizing: border-box;
   }
-  input:focus {
+  input:focus, select:focus {
     outline: none;
     border-color: var(--neon-pink);
     box-shadow: 0 0 8px var(--neon-pink);
+  }
+  .checkbox-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 10px;
+  }
+  .checkbox-group input {
+    width: auto;
+    margin: 0;
   }
   .button-group {
     display: flex;
@@ -80,190 +101,433 @@
     color: white;
     box-shadow: 0 0 15px var(--neon-pink);
   }
-  .resource-links {
-    text-align: center;
-    padding: 20px;
-  }
-  .resource-links a {
-    color: var(--neon-pink);
-    text-decoration: none;
-    font-weight: bold;
-    display: inline-block;
-    margin: 0 15px;
-    border-bottom: 1px dashed var(--neon-pink);
-    transition: text-shadow 0.3s;
-  }
-  .resource-links a:hover {
-    text-shadow: 0 0 8px var(--neon-pink);
-  }
-  
-  /* Print Layout: Hides UI and formats for 8.5x11 Check-on-Top paper */
+
+  /* --- PRINT LAYOUT --- */
   @media print {
+    @page {
+      size: letter;
+      margin: 0;
+    }
     body {
       background: white;
       color: black;
       padding: 0;
       margin: 0;
+      -webkit-print-color-adjust: exact;
     }
     .no-print {
       display: none;
     }
-    .paystub-preview {
+    #printDocument {
       display: block !important;
-      border: none !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      width: 100%;
-    }
-    /* Creates a 3.5 inch margin at the top to bypass the physical check area */
-    .stub-section-wrapper {
-      margin-top: 3.6in; 
-      padding: 0.5in;
-    }
-    .stub-header, .stub-body {
+      width: 8.5in;
+      height: 11in;
+      background: white;
       color: black;
+    }
+    .check-section {
+      height: 3.5in;
+      width: 8.5in;
+      box-sizing: border-box;
+      padding: 0.4in;
+      position: relative;
+    }
+    .stub-section {
+      height: 3.5in;
+      width: 8.5in;
+      box-sizing: border-box;
+      padding: 0.4in;
+      border-top: 1px dashed #ccc;
+    }
+    /* Check Formatting */
+    .check-header {
+      display: flex;
+      justify-content: space-between;
+    }
+    .comp-logo {
+      max-width: 100px;
+      max-height: 50px;
+      margin-right: 10px;
+      display: none;
+    }
+    .check-micr {
+      position: absolute;
+      bottom: 0.25in;
+      left: 0.4in;
+      font-family: 'Courier New', Courier, monospace; /* MICR font fallback */
+      font-size: 16pt;
+      font-weight: bold;
+    }
+    .pay-to-order {
+      margin-top: 0.3in;
+      display: flex;
+      align-items: flex-end;
+    }
+    .pay-to-order .line {
+      border-bottom: 1px solid black;
+      flex-grow: 1;
+      margin: 0 10px;
+      padding-bottom: 2px;
+    }
+    /* Stub Formatting */
+    .stub-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    .stub-table th, .stub-table td {
+      border: 1px solid #000;
+      padding: 4px 8px;
+      text-align: left;
+    }
+    .stub-table th {
+      background-color: #eee;
     }
   }
 
-  .paystub-preview {
+  #printDocument {
     display: none;
-    background: white;
-    color: black;
-    border: 2px dashed #444;
-    margin-top: 20px;
-  }
-  .stub-header {
-    display: flex;
-    justify-content: space-between;
-    border-bottom: 2px solid #000;
-    padding-bottom: 10px;
-    margin-bottom: 15px;
-  }
-  .stub-body {
-    display: flex;
-    justify-content: space-between;
-  }
-  .data-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  .data-table td {
-    padding: 8px;
-    border-bottom: 1px solid #ccc;
   }
 </style>
 </head>
 <body>
+
   <div class="container no-print">
-    <h1>Paystub Generator</h1>
+    <h1>Paystub & Check Generator</h1>
     
+    <!-- COMPANY DETAILS -->
     <div class="card">
       <h3>Company Details</h3>
-      <label>Company Name</label>
-      <input type="text" id="compName">
-      <label>Company Address</label>
-      <input type="text" id="compAddress">
+      <div class="grid-2">
+        <div>
+          <label>Company Name</label>
+          <input type="text" id="cName">
+        </div>
+        <div>
+          <label>Phone Number</label>
+          <input type="text" id="cPhone">
+        </div>
+      </div>
+      
+      <label>Address Line 1</label>
+      <input type="text" id="cAddr1">
+      
+      <div class="checkbox-group">
+        <input type="checkbox" id="toggleAddr2" onchange="toggleAddress2()">
+        <label for="toggleAddr2" style="margin:0;">Add Address Line 2</label>
+      </div>
+      <div id="addr2Container" style="display:none;">
+        <label>Address Line 2</label>
+        <input type="text" id="cAddr2">
+      </div>
+
+      <div class="grid-3">
+        <div>
+          <label>City</label>
+          <input type="text" id="cCity">
+        </div>
+        <div>
+          <label>State</label>
+          <input type="text" id="cState">
+        </div>
+        <div>
+          <label>Zip Code</label>
+          <input type="text" id="cZip">
+        </div>
+      </div>
+
+      <label>Document Font</label>
+      <select id="cFont">
+        <option value="Arial, sans-serif">Arial (Sans-Serif)</option>
+        <option value="'Times New Roman', Times, serif">Times New Roman (Serif)</option>
+        <option value="'Courier New', Courier, monospace">Courier New (Monospace)</option>
+        <option value="Georgia, serif">Georgia</option>
+      </select>
     </div>
 
+    <!-- BANK INFORMATION -->
+    <div class="card">
+      <h3>Bank Information & Graphics</h3>
+      <div class="grid-2">
+        <div>
+          <label>Bank Name</label>
+          <input type="text" id="bName">
+        </div>
+        <div>
+          <label>Custom Logo</label>
+          <input type="file" id="cLogo" accept="image/*" onchange="handleLogoUpload(event)">
+        </div>
+      </div>
+      
+      <div class="grid-2">
+        <div>
+          <label>Routing Number</label>
+          <input type="text" id="bRout">
+        </div>
+        <div>
+          <label>Account Number</label>
+          <input type="text" id="bAcc">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label>Starting Check Number</label>
+          <input type="number" id="bChkNum" value="1001">
+        </div>
+        <div>
+          <label>Check Number Prefix (Optional)</label>
+          <input type="text" id="bChkPre" placeholder="e.g. #">
+        </div>
+      </div>
+    </div>
+
+    <!-- EMPLOYEE & PAY DETAILS -->
     <div class="card">
       <h3>Employee & Pay Details</h3>
-      <label>Employee Name</label>
-      <input type="text" id="empName">
-      <label>Pay Period (Start - End)</label>
-      <div style="display:flex; gap:10px;">
-        <input type="date" id="payStart">
-        <input type="date" id="payEnd">
+      <div class="grid-2">
+        <div>
+          <label>Employee Name</label>
+          <input type="text" id="eName">
+        </div>
+        <div>
+          <label>Pay Date</label>
+          <input type="date" id="pDate">
+        </div>
       </div>
-      <label>Gross Pay ($)</label>
-      <input type="number" id="grossPay" step="0.01">
-      <label>Total Deductions/Taxes ($)</label>
-      <input type="number" id="deductions" step="0.01">
+      <div class="grid-2">
+        <div>
+          <label>Gross Pay ($)</label>
+          <input type="number" id="pGross" step="0.01">
+        </div>
+        <div>
+          <label>Total Deductions/Taxes ($)</label>
+          <input type="number" id="pDed" step="0.01">
+        </div>
+      </div>
+      <label>Memo</label>
+      <input type="text" id="pMemo" placeholder="Payroll">
       
       <div class="button-group">
-        <button onclick="generateStub()">Generate View</button>
-        <button onclick="window.print()">Print Document</button>
+        <button onclick="saveAndPrint()">Save Data & Print Document</button>
       </div>
-    </div>
-
-    <div class="resource-links card">
-      <h3>Compatible Blank Check Paper</h3>
-      <p style="color:#aaa; font-size:14px;">Print using standard 8.5" x 11" "Check-on-Top" Form 1000 style paper.</p>
-      <a href="https://www.versacheck.com/web/products.aspx?form=1000" target="_blank">Buy VersaCheck Form 1000</a>
-      <a href="https://www.amazon.com/s?k=blank+business+check+paper+check+on+top" target="_blank">Search Amazon Stock</a>
     </div>
   </div>
 
-  <div id="stubOutput" class="paystub-preview">
-    <div class="stub-section-wrapper">
-      <div class="stub-header">
-        <div>
-          <h2 id="outCompName" style="margin:0;"></h2>
-          <p id="outCompAddress" style="margin:5px 0 0 0;"></p>
+  <!-- PRINTABLE DOCUMENT: 8.5 x 11 Format -->
+  <div id="printDocument">
+    
+    <!-- SECTION 1: THE CHECK (0 to 3.5 inches) -->
+    <div class="check-section">
+      <div class="check-header">
+        <div style="display:flex;">
+          <img id="outLogo" class="comp-logo" src="">
+          <div>
+            <strong id="outCName" style="font-size:18px;"></strong><br>
+            <span id="outCAddr"></span><br>
+            <span id="outCPhone"></span>
+          </div>
         </div>
         <div style="text-align: right;">
-          <h3 style="margin:0;">EARNINGS STATEMENT</h3>
-          <p>Period: <span id="outPeriod"></span></p>
+          <strong style="font-size:18px;"><span id="outChkPre"></span><span class="outChkNum"></span></strong><br>
+          <div style="margin-top:10px;">
+            Date: <span id="outDate"></span>
+          </div>
         </div>
       </div>
-      <div class="stub-body">
-        <div style="width: 48%;">
-          <strong>Employee:</strong> <span id="outEmpName"></span>
-        </div>
-        <div style="width: 48%;">
-          <table class="data-table">
-            <tr>
-              <td>Gross Pay:</td>
-              <td style="text-align: right;">$<span id="outGross">0.00</span></td>
-            </tr>
-            <tr>
-              <td>Deductions:</td>
-              <td style="text-align: right;">-$<span id="outDed">0.00</span></td>
-            </tr>
-            <tr>
-              <td style="font-weight: bold;">Net Pay:</td>
-              <td style="font-weight: bold; text-align: right;">$<span id="outNet">0.00</span></td>
-            </tr>
-          </table>
-        </div>
+      <div style="text-align: center; margin-top:-20px;">
+        <strong id="outBName"></strong>
+      </div>
+      
+      <div class="pay-to-order">
+        <span>PAY TO THE<br>ORDER OF</span>
+        <div class="line" id="outEName"></div>
+        <span>$ <span id="outNetAmt">0.00</span></span>
+      </div>
+      
+      <div style="margin-top: 25px; display:flex; justify-content:space-between;">
+        <div style="width: 60%;">Memo: <span id="outMemo"></span></div>
+        <div style="border-bottom:1px solid black; width:35%;"></div>
+      </div>
+
+      <!-- MICR LINE (Using standard symbols visually mapping to MICR E13B) -->
+      <div class="check-micr">
+        C<span class="outChkNum"></span>C A<span id="outRouting"></span>A <span id="outAccount"></span>C
       </div>
     </div>
+
+    <!-- SECTION 2: PAYSTUB 1 (3.5 to 7.0 inches) -->
+    <div class="stub-section">
+      <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+        <div>
+          <strong class="outCName_stub"></strong><br>
+          Employee: <span class="outEName_stub"></span>
+        </div>
+        <div style="text-align:right;">
+          <strong>EARNINGS STATEMENT</strong><br>
+          Check No: <span class="outChkNum"></span> | Date: <span class="outDate_stub"></span>
+        </div>
+      </div>
+      <table class="stub-table">
+        <tr>
+          <th>Description</th>
+          <th>Current Amount</th>
+        </tr>
+        <tr>
+          <td>Gross Earnings</td>
+          <td>$<span id="outGross1">0.00</span></td>
+        </tr>
+        <tr>
+          <td>Taxes & Deductions</td>
+          <td>-$<span id="outDed1">0.00</span></td>
+        </tr>
+        <tr>
+          <td><strong>Net Pay</strong></td>
+          <td><strong>$<span class="outNetAmt_stub">0.00</span></strong></td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- SECTION 3: PAYSTUB 2 (7.0 to 10.5 inches) -->
+    <div class="stub-section">
+      <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+        <div>
+          <strong class="outCName_stub"></strong><br>
+          Employee: <span class="outEName_stub"></span>
+        </div>
+        <div style="text-align:right;">
+          <strong>EARNINGS STATEMENT</strong><br>
+          Check No: <span class="outChkNum"></span> | Date: <span class="outDate_stub"></span>
+        </div>
+      </div>
+      <table class="stub-table">
+        <tr>
+          <th>Description</th>
+          <th>Current Amount</th>
+        </tr>
+        <tr>
+          <td>Gross Earnings</td>
+          <td>$<span id="outGross2">0.00</span></td>
+        </tr>
+        <tr>
+          <td>Taxes & Deductions</td>
+          <td>-$<span id="outDed2">0.00</span></td>
+        </tr>
+        <tr>
+          <td><strong>Net Pay</strong></td>
+          <td><strong>$<span class="outNetAmt_stub">0.00</span></strong></td>
+        </tr>
+      </table>
+    </div>
+
   </div>
 
   <script>
-    // Initialize Local Storage
-    document.addEventListener("DOMContentLoaded", () => {
-      if (localStorage.getItem("companyName")) {
-        document.getElementById("compName").value = localStorage.getItem("companyName");
+    // Address Line 2 Toggle Logic
+    function toggleAddress2() {
+      const isChecked = document.getElementById('toggleAddr2').checked;
+      document.getElementById('addr2Container').style.display = isChecked ? 'block' : 'none';
+    }
+
+    // Logo Upload to Base64
+    let base64Logo = "";
+    function handleLogoUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          base64Logo = e.target.result;
+        };
+        reader.readAsDataURL(file);
       }
-      if (localStorage.getItem("companyAddress")) {
-        document.getElementById("compAddress").value = localStorage.getItem("companyAddress");
+    }
+
+    // Load saved data on startup
+    document.addEventListener("DOMContentLoaded", () => {
+      const fields = ["cName", "cPhone", "cAddr1", "cAddr2", "cCity", "cState", "cZip", "cFont", "bName", "bRout", "bAcc", "bChkPre"];
+      fields.forEach(id => {
+        if (localStorage.getItem(id)) document.getElementById(id).value = localStorage.getItem(id);
+      });
+      if (localStorage.getItem("cAddr2")) {
+        document.getElementById("toggleAddr2").checked = true;
+        toggleAddress2();
+      }
+      if (localStorage.getItem("base64Logo")) {
+        base64Logo = localStorage.getItem("base64Logo");
       }
     });
 
-    function generateStub() {
-      const cName = document.getElementById("compName").value;
-      const cAddr = document.getElementById("compAddress").value;
-      const eName = document.getElementById("empName").value;
-      const pStart = document.getElementById("payStart").value;
-      const pEnd = document.getElementById("payEnd").value;
-      const gross = parseFloat(document.getElementById("grossPay").value) || 0;
-      const ded = parseFloat(document.getElementById("deductions").value) || 0;
-      const net = gross - ded;
+    // Populate Print View & Save State
+    function saveAndPrint() {
+      // 1. Save all inputs to localStorage
+      const fields = ["cName", "cPhone", "cAddr1", "cAddr2", "cCity", "cState", "cZip", "cFont", "bName", "bRout", "bAcc", "bChkPre"];
+      fields.forEach(id => {
+        localStorage.setItem(id, document.getElementById(id).value);
+      });
+      if (base64Logo) localStorage.setItem("base64Logo", base64Logo);
 
-      // Save business data to Local Storage
-      localStorage.setItem("companyName", cName);
-      localStorage.setItem("companyAddress", cAddr);
+      // 2. Formatting Address
+      const name = document.getElementById("cName").value;
+      const a1 = document.getElementById("cAddr1").value;
+      const a2 = document.getElementById("toggleAddr2").checked ? document.getElementById("cAddr2").value : "";
+      const city = document.getElementById("cCity").value;
+      const state = document.getElementById("cState").value;
+      const zip = document.getElementById("cZip").value;
+      
+      let fullAddr = `${a1}`;
+      if(a2) fullAddr += `<br>${a2}`;
+      fullAddr += `<br>${city}, ${state} ${zip}`;
 
-      // Populate print view
-      document.getElementById("outCompName").innerText = cName || "Company Name";
-      document.getElementById("outCompAddress").innerText = cAddr || "Company Address";
-      document.getElementById("outEmpName").innerText = eName || "Employee Name";
-      document.getElementById("outPeriod").innerText = `${pStart} to ${pEnd}`;
-      document.getElementById("outGross").innerText = gross.toFixed(2);
-      document.getElementById("outDed").innerText = ded.toFixed(2);
-      document.getElementById("outNet").innerText = net.toFixed(2);
+      // 3. Formatting Math
+      const gross = parseFloat(document.getElementById("pGross").value) || 0;
+      const ded = parseFloat(document.getElementById("pDed").value) || 0;
+      const net = (gross - ded).toFixed(2);
+      const chkNum = document.getElementById("bChkNum").value;
+      const pDate = document.getElementById("pDate").value;
 
-      document.getElementById("stubOutput").style.display = "block";
+      // 4. Apply to Document
+      document.getElementById("printDocument").style.fontFamily = document.getElementById("cFont").value;
+      
+      document.getElementById("outCName").innerText = name;
+      document.querySelectorAll(".outCName_stub").forEach(el => el.innerText = name);
+      document.getElementById("outCAddr").innerHTML = fullAddr;
+      document.getElementById("outCPhone").innerText = document.getElementById("cPhone").value;
+      
+      // Logo
+      const logoEl = document.getElementById("outLogo");
+      if(base64Logo) {
+        logoEl.src = base64Logo;
+        logoEl.style.display = "block";
+      } else {
+        logoEl.style.display = "none";
+      }
+
+      // Bank & Routing
+      document.getElementById("outBName").innerText = document.getElementById("bName").value;
+      document.getElementById("outRouting").innerText = document.getElementById("bRout").value;
+      document.getElementById("outAccount").innerText = document.getElementById("bAcc").value;
+      
+      // Check & Employee Details
+      document.getElementById("outChkPre").innerText = document.getElementById("bChkPre").value;
+      document.querySelectorAll(".outChkNum").forEach(el => el.innerText = chkNum);
+      document.getElementById("outDate").innerText = pDate;
+      document.querySelectorAll(".outDate_stub").forEach(el => el.innerText = pDate);
+      document.getElementById("outEName").innerText = document.getElementById("eName").value;
+      document.querySelectorAll(".outEName_stub").forEach(el => el.innerText = document.getElementById("eName").value);
+      document.getElementById("outMemo").innerText = document.getElementById("pMemo").value;
+
+      document.getElementById("outNetAmt").innerText = net;
+      document.querySelectorAll(".outNetAmt_stub").forEach(el => el.innerText = net);
+      document.getElementById("outGross1").innerText = gross.toFixed(2);
+      document.getElementById("outGross2").innerText = gross.toFixed(2);
+      document.getElementById("outDed1").innerText = ded.toFixed(2);
+      document.getElementById("outDed2").innerText = ded.toFixed(2);
+
+      // Increment check number for next time
+      document.getElementById("bChkNum").value = parseInt(chkNum) + 1;
+
+      // Trigger Print
+      window.print();
     }
   </script>
 </body>
